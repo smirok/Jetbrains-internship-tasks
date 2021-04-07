@@ -1,6 +1,3 @@
-import kotlin.math.abs
-import kotlin.random.Random
-
 fun multiplyNaive(
     firstArray: Array<out Array<Number>>,
     secondArray: Array<out Array<Number>>
