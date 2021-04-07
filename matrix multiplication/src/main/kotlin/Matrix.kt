@@ -36,11 +36,13 @@ class Matrix(private var array: Array<out Array<Number>>) {
 
     fun getSubMatrix(topLeft: Pair<Int, Int>, rows: Int, columns: Int): Matrix {
         val matrix = Matrix(Array(rows) { Array(columns) { 0 } })
+
         for (i in 0 until getRows()) {
             for (j in 0 until getColumns()) {
                 matrix[i, j] = this[i + topLeft.first, j + topLeft.second]
             }
         }
+
         return matrix
     }
 

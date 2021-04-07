@@ -181,6 +181,7 @@ fun naiveDivideAndConquer(firstMatrix: Matrix, secondMatrix: Matrix): Matrix {
     )
 
     val matrix = Matrix(Array(firstMatrix.getRows()) { Array(secondMatrix.getColumns()) { 0 } })
+
     naiveDivideAndConquerRecursive(
         firstMatrix, Pair(0, 0),
         secondMatrix, Pair(0, 0),
@@ -212,6 +213,7 @@ fun shtrassenVinogradMultiplication(firstMatrix: Matrix, secondMatrix: Matrix): 
 
     val squareFirstMatrix = Matrix(Array(sideLength) { Array(sideLength) { 0 } })
     squareFirstMatrix.setSubMatrix(Pair(0, 0), firstMatrix)
+
     val squareSecondMatrix = Matrix(Array(sideLength) { Array(sideLength) { 0 } })
     squareSecondMatrix.setSubMatrix(Pair(0, 0), secondMatrix)
 
