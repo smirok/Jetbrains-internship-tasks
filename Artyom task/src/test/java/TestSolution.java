@@ -77,37 +77,41 @@ public class TestSolution {
 
     @Test
     public void testSmall() throws IOException {
-        int n = 10;
-        Optional<String> alphabet = Optional.empty();
-        while (alphabet.isEmpty()) {
-            alphabet = solution.solve(generateInputStreamWithRandomStrings(n));
-            solution = new Solution();
+        for (int i = 0; i < 10000; i++) {
+            int n = 10;
+            Optional<String> alphabet = Optional.empty();
+            while (alphabet.isEmpty()) {
+                alphabet = solution.solve(generateInputStreamWithRandomStrings(n));
+                solution = new Solution();
+            }
+
+            String[] sortedByCmp = new String[buffer.length];
+            Arrays.stream(buffer)
+                    .sorted(new StringComparator(alphabet.get()).reversed())
+                    .collect(Collectors.toList())
+                    .toArray(sortedByCmp);
+
+            Assertions.assertTrue(Arrays.equals(buffer, sortedByCmp));
         }
-
-        String[] sortedByCmp = new String[buffer.length];
-        Arrays.stream(buffer)
-                .sorted(new StringComparator(alphabet.get()).reversed())
-                .collect(Collectors.toList())
-                .toArray(sortedByCmp);
-
-        Assertions.assertTrue(Arrays.equals(buffer, sortedByCmp));
     }
 
     @Test
     public void testMiddle() throws IOException {
-        int n = 20;
-        Optional<String> alphabet = Optional.empty();
-        while (alphabet.isEmpty()) {
-            alphabet = solution.solve(generateInputStreamWithRandomStrings(n));
-            solution = new Solution();
+        for (int i = 0; i < 10; i++) {
+            int n = 20;
+            Optional<String> alphabet = Optional.empty();
+            while (alphabet.isEmpty()) {
+                alphabet = solution.solve(generateInputStreamWithRandomStrings(n));
+                solution = new Solution();
+            }
+
+            String[] sortedByCmp = new String[buffer.length];
+            Arrays.stream(buffer)
+                    .sorted(new StringComparator(alphabet.get()).reversed())
+                    .collect(Collectors.toList())
+                    .toArray(sortedByCmp);
+
+            Assertions.assertTrue(Arrays.equals(buffer, sortedByCmp));
         }
-
-        String[] sortedByCmp = new String[buffer.length];
-        Arrays.stream(buffer)
-                .sorted(new StringComparator(alphabet.get()).reversed())
-                .collect(Collectors.toList())
-                .toArray(sortedByCmp);
-
-        Assertions.assertTrue(Arrays.equals(buffer, sortedByCmp));
     }
 }

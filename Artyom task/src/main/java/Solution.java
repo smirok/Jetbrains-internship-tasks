@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 
 public class Solution {
@@ -34,6 +33,13 @@ public class Solution {
         LEAVED
     }
 
+    /**
+     * @param largerStr  assumed large string
+     * @param smallerStr assumed small string
+     * @return Optional(to from) if strings do not match in the character
+     * Optional.empty() if smaller string is a prefix of larger string
+     * @throws IllegalStateException if larger string is a prefix of smaller string
+     */
     private Optional<DirectedEdge> getDirectedEdgeByDifference(String largerStr, String smallerStr) {
         int largerIndex = 0;
         int smallerIndex = 0;
@@ -50,36 +56,42 @@ public class Solution {
 
         if (largerIndex == largerStr.length() && smallerIndex < smallerStr.length()) {
             throw new IllegalStateException(
-                    "The early word is lexicographically smaller than the late word for any alphabet"
+                    "The early word is lexicographically smaller than later word for any alphabet"
             );
         }
 
         return Optional.empty();
     }
 
-    public void readInput(InputStream inputStream) throws IOException {
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(inputStream));
-        int wordsCount = Integer.parseInt(reader.readLine());
-        words = new String[wordsCount];
-        for (int i = 0; i < wordsCount; i++) {
-            words[i] = reader.readLine();
+    public void readInput(InputStream inputStream) {
+        try (BufferedReader reader =
+                     new BufferedReader(new InputStreamReader(inputStream))) {
+            int wordsCount = Integer.parseInt(reader.readLine());
+            words = new String[wordsCount];
+            for (int i = 0; i < wordsCount; i++) {
+                words[i] = reader.readLine();
+            }
+        } catch (IOException ioException) {
+            System.out.println("Incorrect input");
+            System.exit(0);
         }
     }
 
     private void buildDirectedGraph() {
-        for (int i = 0; i < words.length; i++) {
-            for (int j = i + 1; j < words.length; j++) {
-                Optional<DirectedEdge> edgeOptional = getDirectedEdgeByDifference(words[i], words[j]);
+        for (int i = 0; i < words.length - 1; i++) {
+            Optional<DirectedEdge> edgeOptional = getDirectedEdgeByDifference(words[i], words[i + 1]);
 
-                if (edgeOptional.isPresent()) {
-                    DirectedEdge edge = edgeOptional.get();
-                    adjacent[Mapper.charToIndex(edge.from)][Mapper.charToIndex(edge.to)] = true;
-                }
+            if (edgeOptional.isPresent()) {
+                DirectedEdge edge = edgeOptional.get();
+                adjacent[Mapper.charToIndex(edge.from)][Mapper.charToIndex(edge.to)] = true;
             }
         }
     }
 
+    /**
+     * @return true if graph contains cycle
+     * false otherwise
+     */
     private boolean findCycle() {
         boolean isFoundCycle = false;
         for (int i = 0; i < ALPHABET_SIZE; i++) {
@@ -88,6 +100,12 @@ public class Solution {
         return isFoundCycle;
     }
 
+
+    /**
+     * @param vertex - root of dfs tree
+     * @return true if current connectivity component contains cycle
+     * false otherwise
+     */
     private boolean dfs(int vertex) {
         if (vertexStates[vertex] == VertexState.LEAVED) {
             return false;
@@ -109,7 +127,12 @@ public class Solution {
         return foundCycle;
     }
 
-    public Optional<String> solve(InputStream inputStream) throws IOException {
+    /**
+     * @param inputStream - the stream through which we get the data
+     * @return Optional.empty() if correct alphabet not found
+     * Optional with alphabet otherwise
+     */
+    public Optional<String> solve(InputStream inputStream) {
         readInput(inputStream);
 
         try {
@@ -129,9 +152,10 @@ public class Solution {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Solution solution = new Solution();
         Optional<String> optionalAlphabet = solution.solve(System.in);
+
         if (optionalAlphabet.isPresent()) {
             System.out.println(optionalAlphabet.get());
         } else {
