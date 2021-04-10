@@ -1,7 +1,8 @@
+import java.util.HashMap;
 import java.util.List;
 
 public interface Expression {
-    Integer execute();
+    Integer execute(HashMap<String, Expression> args);
 }
 
 class Identifier implements Expression {
@@ -11,9 +12,13 @@ class Identifier implements Expression {
         this.id = id;
     }
 
+    public String getId() {
+        return id;
+    }
+
     @Override
-    public Integer execute() {
-        return null;
+    public Integer execute(HashMap<String, Expression> args) {
+        return 0;
     }
 }
 
@@ -25,7 +30,7 @@ class ConstantExpression implements Expression {
     }
 
     @Override
-    public Integer execute() {
+    public Integer execute(HashMap<String, Expression> args) {
         return number;
     }
 }
@@ -41,24 +46,24 @@ class BinaryExpression implements Expression {
     }
 
     @Override
-    public Integer execute() {
+    public Integer execute(HashMap<String, Expression> args) {
         switch (operation) {
             case ("+"):
-                return leftExpression.execute() + rightExpression.execute();
+                return leftExpression.execute(args) + rightExpression.execute(args);
             case ("-"):
-                return leftExpression.execute() - rightExpression.execute();
+                return leftExpression.execute(args) - rightExpression.execute(args);
             case ("*"):
-                return leftExpression.execute() * rightExpression.execute();
+                return leftExpression.execute(args) * rightExpression.execute(args);
             case ("/"):
-                return leftExpression.execute() / rightExpression.execute();
+                return leftExpression.execute(args) / rightExpression.execute(args);
             case ("%"):
-                return leftExpression.execute() % rightExpression.execute();
+                return leftExpression.execute(args) % rightExpression.execute(args);
             case ("<"):
-                return leftExpression.execute() < rightExpression.execute() ? 1 : 0;
+                return leftExpression.execute(args) < rightExpression.execute(args) ? 1 : 0;
             case (">"):
-                return leftExpression.execute() > rightExpression.execute() ? 1 : 0;
+                return leftExpression.execute(args) > rightExpression.execute(args) ? 1 : 0;
             case ("="):
-                return leftExpression.execute().equals(rightExpression.execute()) ? 1 : 0;
+                return leftExpression.execute(args).equals(rightExpression.execute(args)) ? 1 : 0;
         }
         return 0;
     }
@@ -67,12 +72,16 @@ class BinaryExpression implements Expression {
 class ArgumentList implements Expression {
     private List<Expression> args;
 
+    public List<Expression> getArgs() {
+        return args;
+    }
+
     ArgumentList(List<Expression> args) {
         this.args = args;
     }
 
     @Override
-    public Integer execute() {
+    public Integer execute(HashMap<String, Expression> args) {
         return 0;
     }
 }
@@ -87,8 +96,14 @@ class CallExpression implements Expression {
     }
 
     @Override
-    public Integer execute() {
-        return 0;
+    public Integer execute(HashMap<String, Expression> args) {
+        FunctionDefinition function = Program.functions.get(identifier.getId());
+
+        HashMap<String, Expression> newArgs = new HashMap<>();
+        for (int i = 0; i < function.parameterList.size(); i++) {
+            newArgs.put(function.parameterList.get(i), argumentList.getArgs().get(i));
+        }
+        return function.body.execute(newArgs);
     }
 }
 
@@ -102,7 +117,7 @@ class IfExpression implements Expression {
     }
 
     @Override
-    public Integer execute() {
+    public Integer execute(HashMap<String, Expression> args) {
         return 0;
     }
 }
