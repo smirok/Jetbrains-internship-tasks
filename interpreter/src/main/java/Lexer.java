@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Map.Entry;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Optional;
 
 public class Lexer {
@@ -10,17 +12,19 @@ public class Lexer {
         this.text = text;
     }
 
-    private ArrayList<Token> tokens = new ArrayList<>();
+    private ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
 
-    public Token findNextToken() {
+    public Entry<Token, String> findNextToken() {
         for (Token token : Token.values()) {
             Optional<Integer> optionalEnd = token.indexAfterMatch(text, currentPosition);
 
             if (optionalEnd.isPresent()) {
-                token.setValue(text.substring(currentPosition, optionalEnd.get()));
-                tokens.add(token);
+                Entry<Token, String> result = new SimpleEntry<>(
+                        token, text.substring(currentPosition, optionalEnd.get())
+                );
                 currentPosition = optionalEnd.get();
-                return token;
+                tokens.add(result);
+                return result;
             }
         }
         return null;
@@ -32,7 +36,7 @@ public class Lexer {
         }
     }
 
-    public Token getToken(int index) {
+    public Entry<Token, String> getTokenAndValue(int index) {
         return tokens.get(index);
     }
 }

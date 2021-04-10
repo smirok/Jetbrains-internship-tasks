@@ -3,7 +3,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public enum Token {
-
     NUMBER("\\d+"),
     IDENTIFIER("[0-9a-zA-Z_]+"),
     PLUS("\\+"),
@@ -26,16 +25,6 @@ public enum Token {
     EOL("\\n");
 
     private final String str;
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    private String value;
 
     Token(String str) {
         this.str = str;
