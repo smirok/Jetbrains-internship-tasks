@@ -12,7 +12,7 @@ public class Lexer {
         this.text = text;
     }
 
-    private ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
+    private final ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
 
     public Entry<Token, String> findNextToken() {
         for (Token token : Token.values()) {
@@ -27,13 +27,18 @@ public class Lexer {
                 return result;
             }
         }
+
         return null;
     }
 
-    public void lexAll() {
+    public boolean lexAll() {
         while (currentPosition < text.length()) {
-            findNextToken();
+            if (findNextToken() == null) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     public Entry<Token, String> getTokenAndValue(int index) {

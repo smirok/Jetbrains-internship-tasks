@@ -2,11 +2,11 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface Expression {
-    Integer execute(HashMap<String, Expression> args);
+    Integer execute(HashMap<String, Integer> args);
 }
 
 class Identifier implements Expression {
-    private String id;
+    private final String id;
 
     Identifier(String id) {
         this.id = id;
@@ -17,27 +17,32 @@ class Identifier implements Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
-        return 0;
+    public Integer execute(HashMap<String, Integer> args) {
+        if (!args.containsKey(id)) {
+            System.out.println("PARAMETER NOT FOUND " + id + ":<line>\n");
+            System.exit(0);
+        }
+        return args.get(id);
     }
 }
 
 class ConstantExpression implements Expression {
-    private Integer number;
+    private final Integer number;
 
     ConstantExpression(Integer number) {
         this.number = number;
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
+    public Integer execute(HashMap<String, Integer> unused) {
         return number;
     }
 }
 
 class BinaryExpression implements Expression {
-    private Expression leftExpression, rightExpression;
-    private String operation;
+    private final Expression leftExpression;
+    private final Expression rightExpression;
+    private final String operation;
 
     BinaryExpression(Expression leftExpression, String operation, Expression rightExpression) {
         this.leftExpression = leftExpression;
@@ -46,7 +51,7 @@ class BinaryExpression implements Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
+    public Integer execute(HashMap<String, Integer> args) {
         switch (operation) {
             case ("+"):
                 return leftExpression.execute(args) + rightExpression.execute(args);
@@ -70,7 +75,7 @@ class BinaryExpression implements Expression {
 }
 
 class ArgumentList implements Expression {
-    private List<Expression> args;
+    private final List<Expression> args;
 
     public List<Expression> getArgs() {
         return args;
@@ -81,14 +86,14 @@ class ArgumentList implements Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
+    public Integer execute(HashMap<String, Integer> unused) {
         return 0;
     }
 }
 
 class CallExpression implements Expression {
-    private Identifier identifier;
-    private ArgumentList argumentList;
+    private final Identifier identifier;
+    private final ArgumentList argumentList;
 
     CallExpression(Identifier identifier, ArgumentList argumentList) {
         this.identifier = identifier;
@@ -96,19 +101,31 @@ class CallExpression implements Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
+    public Integer execute(HashMap<String, Integer> args) {
+        if (!Program.functions.containsKey(identifier.getId())) {
+            System.out.println("FUNCTION NOT FOUND " + identifier.getId() + ":<line>\n");
+            System.exit(0);
+        }
         FunctionDefinition function = Program.functions.get(identifier.getId());
 
-        HashMap<String, Expression> newArgs = new HashMap<>();
+        HashMap<String, Integer> newArgs = new HashMap<>();
+
+        if (argumentList.getArgs().size() != function.parameterList.size()) {
+            System.out.println("ARGUMENT NUMBER MISMATCH " + identifier.getId() + ":<line>\n");
+            System.exit(0);
+        }
+
         for (int i = 0; i < function.parameterList.size(); i++) {
-            newArgs.put(function.parameterList.get(i), argumentList.getArgs().get(i));
+            newArgs.put(function.parameterList.get(i), argumentList.getArgs().get(i).execute(args));
         }
         return function.body.execute(newArgs);
     }
 }
 
 class IfExpression implements Expression {
-    private Expression condition, trueExpression, falseExpression;
+    private final Expression condition;
+    private final Expression trueExpression;
+    private final Expression falseExpression;
 
     IfExpression(Expression condition, Expression trueExpression, Expression falseExpression) {
         this.condition = condition;
@@ -117,7 +134,11 @@ class IfExpression implements Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Expression> args) {
-        return 0;
+    public Integer execute(HashMap<String, Integer> args) {
+        if (condition.execute(args).equals(1)) {
+            return trueExpression.execute(args);
+        } else {
+            return falseExpression.execute(args);
+        }
     }
 }

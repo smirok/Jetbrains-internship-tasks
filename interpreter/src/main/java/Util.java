@@ -7,7 +7,7 @@ class Program {
 
 class FunctionDefinition {
     String id;
-    List<String> parameterList = null;
+    List<String> parameterList;
     Expression body;
 
     FunctionDefinition(String id, List<String> parameterList, Expression body) {
