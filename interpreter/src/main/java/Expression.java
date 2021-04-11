@@ -4,7 +4,7 @@ import java.util.List;
 public abstract class Expression {
     int line = 0;
 
-    abstract Integer execute(HashMap<String, Integer> args);
+    abstract Integer execute(HashMap<String, Integer> args) throws InterpreterException;
 }
 
 class Identifier extends Expression {
@@ -20,10 +20,9 @@ class Identifier extends Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Integer> args) {
+    public Integer execute(HashMap<String, Integer> args) throws InterpreterException {
         if (!args.containsKey(id)) {
-            System.out.println("PARAMETER NOT FOUND " + id + ":" + line + "\n");
-            System.exit(0);
+            throw new InterpreterException("PARAMETER NOT FOUND " + id + ":" + line);
         }
         return args.get(id);
     }
@@ -56,7 +55,7 @@ class BinaryExpression extends Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Integer> args) {
+    public Integer execute(HashMap<String, Integer> args) throws InterpreterException {
         switch (operation) {
             case ("+"):
                 return leftExpression.execute(args) + rightExpression.execute(args);
@@ -71,8 +70,7 @@ class BinaryExpression extends Expression {
                     divisor = rightExpression.execute(args);
                     return dividend / divisor;
                 } catch (RuntimeException runtimeException) {
-                    System.out.println("RUNTIME ERROR (" + dividend + "/" + divisor + "):" + line);
-                    System.exit(0);
+                    throw new InterpreterException("RUNTIME ERROR (" + dividend + "/" + divisor + "):" + line);
                 }
             case ("%"):
                 return leftExpression.execute(args) % rightExpression.execute(args);
@@ -116,18 +114,16 @@ class CallExpression extends Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Integer> args) {
+    public Integer execute(HashMap<String, Integer> args) throws InterpreterException {
         if (!Program.functions.containsKey(identifier.getId())) {
-            System.out.println("FUNCTION NOT FOUND " + identifier.getId() + ":" + line + "\n");
-            System.exit(0);
+            throw new InterpreterException("FUNCTION NOT FOUND " + identifier.getId() + ":" + line);
         }
         FunctionDefinition function = Program.functions.get(identifier.getId());
 
         HashMap<String, Integer> newArgs = new HashMap<>();
 
         if (argumentList.getArgs().size() != function.getParameterList().size()) {
-            System.out.println("ARGUMENT NUMBER MISMATCH " + identifier.getId() + ":" + line + "\n");
-            System.exit(0);
+            throw new InterpreterException("ARGUMENT NUMBER MISMATCH " + identifier.getId() + ":" + line);
         }
 
         for (int i = 0; i < function.getParameterList().size(); i++) {
@@ -150,7 +146,7 @@ class IfExpression extends Expression {
     }
 
     @Override
-    public Integer execute(HashMap<String, Integer> args) {
+    public Integer execute(HashMap<String, Integer> args) throws InterpreterException {
         if (condition.execute(args).equals(1)) {
             return trueExpression.execute(args);
         } else {

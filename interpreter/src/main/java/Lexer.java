@@ -14,6 +14,10 @@ public class Lexer {
 
     private final ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
 
+    public int getTokensCount() {
+        return tokens.size();
+    }
+
     public Entry<Token, String> findNextToken() {
         for (Token token : Token.values()) {
             Optional<Integer> optionalEnd = token.indexAfterMatch(text, currentPosition);

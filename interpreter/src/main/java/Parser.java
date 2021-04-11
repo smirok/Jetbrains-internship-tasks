@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 public class Parser {
 
@@ -10,20 +11,18 @@ public class Parser {
 
     Parser(String text) {
         lexer = new Lexer(text);
-
-        if (!lexer.lexAll()) {
-            System.out.println("LEX ERROR");
-            System.exit(0);
-        }
     }
 
-    private String acceptToken(Token token) {
+    private String acceptToken(Token token) throws InterpreterException {
+        if (currentPosition >= lexer.getTokensCount()) {
+            throw new InterpreterException("SYNTAX ERROR");
+        }
         Entry<Token, String> entry = lexer.getTokenAndValue(currentPosition);
         if (entry.getKey().equals(token)) {
             currentPosition++;
             return entry.getValue();
         } else {
-            throw new IllegalStateException();
+            throw new InterpreterException("SYNTAX ERROR");
         }
     }
 
@@ -31,7 +30,7 @@ public class Parser {
         return lexer.getTokenAndValue(currentPosition).getKey().equals(token);
     }
 
-    private String parseOperation() {
+    private String parseOperation() throws InterpreterException {
         if (tryAcceptToken(Token.PLUS)) {
             return acceptToken(Token.PLUS);
         }
@@ -67,11 +66,11 @@ public class Parser {
         return null;
     }
 
-    private Identifier parseIdentifier(int line) {
+    private Identifier parseIdentifier(int line) throws InterpreterException {
         return new Identifier(line, acceptToken(Token.IDENTIFIER));
     }
 
-    private ConstantExpression parseConstantExpression(int line) {
+    private ConstantExpression parseConstantExpression(int line) throws InterpreterException {
         if (tryAcceptToken(Token.MINUS)) {
             acceptToken(Token.MINUS);
             return new ConstantExpression(line, -Integer.parseInt(acceptToken(Token.NUMBER)));
@@ -79,7 +78,7 @@ public class Parser {
         return new ConstantExpression(line, Integer.parseInt(acceptToken(Token.NUMBER)));
     }
 
-    private BinaryExpression parseBinaryExpression(int line) {
+    private BinaryExpression parseBinaryExpression(int line) throws InterpreterException {
         acceptToken(Token.LEFT_ROUND_BRACKET);
         Expression leftExpr = parseExpression(line);
         String op = parseOperation();
@@ -88,7 +87,7 @@ public class Parser {
         return new BinaryExpression(line, leftExpr, op, rightExpr);
     }
 
-    private ArgumentList parseArgumentList(int line) {
+    private ArgumentList parseArgumentList(int line) throws InterpreterException {
         ArrayList<Expression> exprList = new ArrayList<>();
         exprList.add(parseExpression(line));
         while (tryAcceptToken(Token.COMMA)) {
@@ -99,7 +98,7 @@ public class Parser {
         return new ArgumentList(line, exprList);
     }
 
-    private CallExpression parseCallExpression(int line) {
+    private CallExpression parseCallExpression(int line) throws InterpreterException {
         Identifier id = parseIdentifier(line);
         acceptToken(Token.LEFT_ROUND_BRACKET);
         ArgumentList argumentList = parseArgumentList(line);
@@ -107,7 +106,7 @@ public class Parser {
         return new CallExpression(line, id, argumentList);
     }
 
-    private IfExpression parseIfExpression(int line) {
+    private IfExpression parseIfExpression(int line) throws InterpreterException {
         acceptToken(Token.LEFT_SQUARE_BRACKET);
         Expression condition = parseExpression(line);
         acceptToken(Token.RIGHT_SQUARE_BRACKET);
@@ -123,7 +122,7 @@ public class Parser {
         return new IfExpression(line, condition, trueExpression, falseExpression);
     }
 
-    private Expression parseExpression(int line) {
+    private Expression parseExpression(int line) throws InterpreterException {
         if (tryAcceptToken(Token.LEFT_SQUARE_BRACKET)) {
             return parseIfExpression(line);
         }
@@ -148,7 +147,7 @@ public class Parser {
         return parseConstantExpression(line);
     }
 
-    public List<String> parseParameterList() {
+    public List<String> parseParameterList() throws InterpreterException {
         ArrayList<String> parameterList = new ArrayList<>();
         parameterList.add(acceptToken(Token.IDENTIFIER));
 
@@ -171,18 +170,18 @@ public class Parser {
             Expression expression = parseExpression(line);
             acceptToken(Token.RIGHT_BRACE);
 
-            return new FunctionDefinition(id, parameterList, expression, line);
+            return new FunctionDefinition(id, parameterList, expression);
         } catch (Exception e) {
             return null;
         }
     }
 
-    private List<FunctionDefinition> parseFunctionDefinitionList() {
+    private List<FunctionDefinition> parseFunctionDefinitionList() throws InterpreterException {
         ArrayList<FunctionDefinition> functionDefinitionList = new ArrayList<>();
 
         int currentLine = 1;
         while (tryAcceptToken(Token.IDENTIFIER)) {
-            int shapshot = currentPosition;
+            int snapshot = currentPosition;
             FunctionDefinition functionDefinition = parseFunctionDefinition(currentLine);
 
             if (functionDefinition != null) {
@@ -190,7 +189,7 @@ public class Parser {
                 acceptToken(Token.EOL);
                 currentLine++;
             } else {
-                currentPosition = shapshot;
+                currentPosition = snapshot;
                 break;
             }
         }
@@ -198,36 +197,41 @@ public class Parser {
         return functionDefinitionList;
     }
 
-    public Integer parseProgram() {
-        List<FunctionDefinition> functionDefinitionList = null;
-
-        try {
-            functionDefinitionList = parseFunctionDefinitionList();
-        } catch (Exception e) {
-            System.out.println("SYNTAX ERROR");
-            System.exit(0);
+    private Integer parseProgram() throws InterpreterException {
+        if (!lexer.lexAll()) {
+            throw new InterpreterException("SYNTAX ERROR");
         }
 
+        List<FunctionDefinition> functionDefinitionList = parseFunctionDefinitionList();
+
         HashMap<String, FunctionDefinition> functions = new HashMap<>();
-        for (var function : functionDefinitionList) {
+        for (FunctionDefinition function : functionDefinitionList) {
             functions.put(function.getId(), function);
         }
         Program.functions = functions;
 
-        Expression expression = null;
-        try {
-            expression = parseExpression(Program.functions.size() + 1);
-        } catch (Exception e) {
-            System.out.println("SYNTAX ERROR");
-            System.exit(0);
+        Expression expression = parseExpression(Program.functions.size() + 1);
+
+        if (currentPosition != lexer.getTokensCount()) {
+            throw new InterpreterException("SYNTAX ERROR");
         }
 
         return expression.execute(null);
     }
 
+    public Optional<Integer> runProgram() {
+        try {
+            return Optional.of(parseProgram());
+        } catch (InterpreterException interpreterException) {
+            System.out.println(interpreterException.getMessage());
+            return Optional.empty();
+        }
+    }
+
     public static void main(String[] args) {
-        Parser parser = new Parser("g(a,b)={(a/b)}\n" +
-                "g(10,0)");
-        System.out.println(parser.parseProgram());
+        Parser parser = new Parser("(2+2)");
+        Optional<Integer> result = parser.runProgram();
+        if (result.isPresent())
+            System.out.println(result);
     }
 }
