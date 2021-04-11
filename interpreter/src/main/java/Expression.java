@@ -2,7 +2,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public abstract class Expression {
-    int line = 0;
+    protected int line = 0;
 
     abstract Integer execute(HashMap<String, Integer> args) throws InterpreterException;
 }

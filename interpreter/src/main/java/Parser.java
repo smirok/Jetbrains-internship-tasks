@@ -147,7 +147,7 @@ public class Parser {
         return parseConstantExpression(line);
     }
 
-    public List<String> parseParameterList() throws InterpreterException {
+    private List<String> parseParameterList() throws InterpreterException {
         ArrayList<String> parameterList = new ArrayList<>();
         parameterList.add(acceptToken(Token.IDENTIFIER));
 
@@ -226,12 +226,5 @@ public class Parser {
             System.out.println(interpreterException.getMessage());
             return Optional.empty();
         }
-    }
-
-    public static void main(String[] args) {
-        Parser parser = new Parser("(2+2)");
-        Optional<Integer> result = parser.runProgram();
-        if (result.isPresent())
-            System.out.println(result);
     }
 }

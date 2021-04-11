@@ -8,11 +8,11 @@ public class Lexer {
     public String text;
     private int currentPosition = 0;
 
+    private final ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
+
     public Lexer(String text) {
         this.text = text;
     }
-
-    private final ArrayList<Entry<Token, String>> tokens = new ArrayList<>();
 
     public int getTokensCount() {
         return tokens.size();
