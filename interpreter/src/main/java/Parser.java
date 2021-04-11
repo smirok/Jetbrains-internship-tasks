@@ -67,85 +67,85 @@ public class Parser {
         return null;
     }
 
-    private Identifier parseIdentifier() {
-        return new Identifier(acceptToken(Token.IDENTIFIER));
+    private Identifier parseIdentifier(int line) {
+        return new Identifier(line, acceptToken(Token.IDENTIFIER));
     }
 
-    private ConstantExpression parseConstantExpression() {
+    private ConstantExpression parseConstantExpression(int line) {
         if (tryAcceptToken(Token.MINUS)) {
             acceptToken(Token.MINUS);
-            return new ConstantExpression(-Integer.parseInt(acceptToken(Token.NUMBER)));
+            return new ConstantExpression(line, -Integer.parseInt(acceptToken(Token.NUMBER)));
         }
-        return new ConstantExpression(Integer.parseInt(acceptToken(Token.NUMBER)));
+        return new ConstantExpression(line, Integer.parseInt(acceptToken(Token.NUMBER)));
     }
 
-    private BinaryExpression parseBinaryExpression() {
+    private BinaryExpression parseBinaryExpression(int line) {
         acceptToken(Token.LEFT_ROUND_BRACKET);
-        Expression leftExpr = parseExpression();
+        Expression leftExpr = parseExpression(line);
         String op = parseOperation();
-        Expression rightExpr = parseExpression();
+        Expression rightExpr = parseExpression(line);
         acceptToken(Token.RIGHT_ROUND_BRACKET);
-        return new BinaryExpression(leftExpr, op, rightExpr);
+        return new BinaryExpression(line, leftExpr, op, rightExpr);
     }
 
-    private ArgumentList parseArgumentList() {
+    private ArgumentList parseArgumentList(int line) {
         ArrayList<Expression> exprList = new ArrayList<>();
-        exprList.add(parseExpression());
+        exprList.add(parseExpression(line));
         while (tryAcceptToken(Token.COMMA)) {
             acceptToken(Token.COMMA);
-            exprList.add(parseExpression());
+            exprList.add(parseExpression(line));
         }
 
-        return new ArgumentList(exprList);
+        return new ArgumentList(line, exprList);
     }
 
-    private CallExpression parseCallExpression() {
-        Identifier id = parseIdentifier();
+    private CallExpression parseCallExpression(int line) {
+        Identifier id = parseIdentifier(line);
         acceptToken(Token.LEFT_ROUND_BRACKET);
-        ArgumentList argumentList = parseArgumentList();
+        ArgumentList argumentList = parseArgumentList(line);
         acceptToken(Token.RIGHT_ROUND_BRACKET);
-        return new CallExpression(id, argumentList);
+        return new CallExpression(line, id, argumentList);
     }
 
-    private IfExpression parseIfExpression() {
+    private IfExpression parseIfExpression(int line) {
         acceptToken(Token.LEFT_SQUARE_BRACKET);
-        Expression condition = parseExpression();
+        Expression condition = parseExpression(line);
         acceptToken(Token.RIGHT_SQUARE_BRACKET);
         acceptToken(Token.QUESTION);
         acceptToken(Token.LEFT_BRACE);
-        Expression trueExpression = parseExpression();
+        Expression trueExpression = parseExpression(line);
         acceptToken(Token.RIGHT_BRACE);
         acceptToken(Token.COLON);
         acceptToken(Token.LEFT_BRACE);
-        Expression falseExpression = parseExpression();
+        Expression falseExpression = parseExpression(line);
         acceptToken(Token.RIGHT_BRACE);
 
-        return new IfExpression(condition, trueExpression, falseExpression);
+        return new IfExpression(line, condition, trueExpression, falseExpression);
     }
 
-    private Expression parseExpression() {
+    private Expression parseExpression(int line) {
         if (tryAcceptToken(Token.LEFT_SQUARE_BRACKET)) {
-            return parseIfExpression();
+            return parseIfExpression(line);
         }
 
         if (tryAcceptToken(Token.LEFT_ROUND_BRACKET)) {
-            return parseBinaryExpression();
+            return parseBinaryExpression(line);
         }
 
         if (tryAcceptToken(Token.IDENTIFIER)) {
-            Identifier identifier = parseIdentifier();
+            Identifier identifier = parseIdentifier(line);
             if (tryAcceptToken(Token.LEFT_ROUND_BRACKET)) { // call
                 acceptToken(Token.LEFT_ROUND_BRACKET);
-                ArgumentList argumentList = parseArgumentList();
+                ArgumentList argumentList = parseArgumentList(line);
                 acceptToken(Token.RIGHT_ROUND_BRACKET);
 
-                return new CallExpression(identifier, argumentList);
+                return new CallExpression(line, identifier, argumentList);
             } else { // id
                 return identifier;
             }
 
         }
-        return parseConstantExpression();
+        return parseConstantExpression(line);
     }
 
     public List<String> parseParameterList() {
@@ -160,7 +160,7 @@ public class Parser {
         return parameterList;
     }
 
-    private FunctionDefinition parseFunctionDefinition() {
+    private FunctionDefinition parseFunctionDefinition(int line) {
         try {
             String id = acceptToken(Token.IDENTIFIER);
             acceptToken(Token.LEFT_ROUND_BRACKET);
@@ -168,10 +168,10 @@ public class Parser {
             acceptToken(Token.RIGHT_ROUND_BRACKET);
             acceptToken(Token.EQ);
             acceptToken(Token.LEFT_BRACE);
-            Expression expression = parseExpression();
+            Expression expression = parseExpression(line);
             acceptToken(Token.RIGHT_BRACE);
 
-            return new FunctionDefinition(id, parameterList, expression);
+            return new FunctionDefinition(id, parameterList, expression, line);
         } catch (Exception e) {
             return null;
         }
@@ -180,13 +180,15 @@ public class Parser {
     private List<FunctionDefinition> parseFunctionDefinitionList() {
         ArrayList<FunctionDefinition> functionDefinitionList = new ArrayList<>();
 
+        int currentLine = 1;
         while (tryAcceptToken(Token.IDENTIFIER)) {
             int shapshot = currentPosition;
-            FunctionDefinition functionDefinition = parseFunctionDefinition();
+            FunctionDefinition functionDefinition = parseFunctionDefinition(currentLine);
 
             if (functionDefinition != null) {
                 functionDefinitionList.add(functionDefinition);
                 acceptToken(Token.EOL);
+                currentLine++;
             } else {
                 currentPosition = shapshot;
                 break;
@@ -207,27 +209,20 @@ public class Parser {
         }
 
         HashMap<String, FunctionDefinition> functions = new HashMap<>();
-        for (var elem : functionDefinitionList) {
-            functions.put(elem.id, elem);
+        for (var function : functionDefinitionList) {
+            functions.put(function.getId(), function);
         }
         Program.functions = functions;
 
         Expression expression = null;
         try {
-            expression = parseExpression();
+            expression = parseExpression(Program.functions.size() + 1);
         } catch (Exception e) {
             System.out.println("SYNTAX ERROR");
             System.exit(0);
         }
 
-        try {
-            return expression.execute(null);
-        } catch (RuntimeException runtimeException) {
-            System.out.println("RUNTIME ERROR");
-            System.exit(0);
-        }
-
-        return null;
+        return expression.execute(null);
     }
 
     public static void main(String[] args) {

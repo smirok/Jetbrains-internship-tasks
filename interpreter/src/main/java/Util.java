@@ -6,11 +6,28 @@ class Program {
 }
 
 class FunctionDefinition {
-    String id;
-    List<String> parameterList;
-    Expression body;
+    public String getId() {
+        return id;
+    }
 
-    FunctionDefinition(String id, List<String> parameterList, Expression body) {
+    public List<String> getParameterList() {
+        return parameterList;
+    }
+
+    public Expression getBody() {
+        return body;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    private final String id;
+    private final List<String> parameterList;
+    private final Expression body;
+    private int line;
+
+    FunctionDefinition(String id, List<String> parameterList, Expression body, int line) {
         this.id = id;
         this.parameterList = parameterList;
         this.body = body;

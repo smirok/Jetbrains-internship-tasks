@@ -1,14 +1,17 @@
 import java.util.HashMap;
 import java.util.List;
 
-public interface Expression {
-    Integer execute(HashMap<String, Integer> args);
+public abstract class Expression {
+    int line = 0;
+
+    abstract Integer execute(HashMap<String, Integer> args);
 }
 
-class Identifier implements Expression {
+class Identifier extends Expression {
     private final String id;
 
-    Identifier(String id) {
+    Identifier(int line, String id) {
+        this.line = line;
         this.id = id;
     }
 
@@ -19,17 +22,18 @@ class Identifier implements Expression {
     @Override
     public Integer execute(HashMap<String, Integer> args) {
         if (!args.containsKey(id)) {
-            System.out.println("PARAMETER NOT FOUND " + id + ":<line>\n");
+            System.out.println("PARAMETER NOT FOUND " + id + ":" + line + "\n");
             System.exit(0);
         }
         return args.get(id);
     }
 }
 
-class ConstantExpression implements Expression {
+class ConstantExpression extends Expression {
     private final Integer number;
 
-    ConstantExpression(Integer number) {
+    ConstantExpression(int line, Integer number) {
+        this.line = line;
         this.number = number;
     }
 
@@ -39,12 +43,13 @@ class ConstantExpression implements Expression {
     }
 }
 
-class BinaryExpression implements Expression {
+class BinaryExpression extends Expression {
     private final Expression leftExpression;
     private final Expression rightExpression;
     private final String operation;
 
-    BinaryExpression(Expression leftExpression, String operation, Expression rightExpression) {
+    BinaryExpression(int line, Expression leftExpression, String operation, Expression rightExpression) {
+        this.line = line;
         this.leftExpression = leftExpression;
         this.operation = operation;
         this.rightExpression = rightExpression;
@@ -60,7 +65,15 @@ class BinaryExpression implements Expression {
             case ("*"):
                 return leftExpression.execute(args) * rightExpression.execute(args);
             case ("/"):
-                return leftExpression.execute(args) / rightExpression.execute(args);
+                Integer dividend = 0, divisor = 0;
+                try {
+                    dividend = leftExpression.execute(args);
+                    divisor = rightExpression.execute(args);
+                    return dividend / divisor;
+                } catch (RuntimeException runtimeException) {
+                    System.out.println("RUNTIME ERROR (" + dividend + "/" + divisor + "):" + line);
+                    System.exit(0);
+                }
             case ("%"):
                 return leftExpression.execute(args) % rightExpression.execute(args);
             case ("<"):
@@ -74,14 +87,15 @@ class BinaryExpression implements Expression {
     }
 }
 
-class ArgumentList implements Expression {
+class ArgumentList extends Expression {
     private final List<Expression> args;
 
     public List<Expression> getArgs() {
         return args;
     }
 
-    ArgumentList(List<Expression> args) {
+    ArgumentList(int line, List<Expression> args) {
+        this.line = line;
         this.args = args;
     }
 
@@ -91,11 +105,12 @@ class ArgumentList implements Expression {
     }
 }
 
-class CallExpression implements Expression {
+class CallExpression extends Expression {
     private final Identifier identifier;
     private final ArgumentList argumentList;
 
-    CallExpression(Identifier identifier, ArgumentList argumentList) {
+    CallExpression(int line, Identifier identifier, ArgumentList argumentList) {
+        this.line = line;
         this.identifier = identifier;
         this.argumentList = argumentList;
     }
@@ -103,31 +118,32 @@ class CallExpression implements Expression {
     @Override
     public Integer execute(HashMap<String, Integer> args) {
         if (!Program.functions.containsKey(identifier.getId())) {
-            System.out.println("FUNCTION NOT FOUND " + identifier.getId() + ":<line>\n");
+            System.out.println("FUNCTION NOT FOUND " + identifier.getId() + ":" + line + "\n");
             System.exit(0);
         }
         FunctionDefinition function = Program.functions.get(identifier.getId());
 
         HashMap<String, Integer> newArgs = new HashMap<>();
 
-        if (argumentList.getArgs().size() != function.parameterList.size()) {
-            System.out.println("ARGUMENT NUMBER MISMATCH " + identifier.getId() + ":<line>\n");
+        if (argumentList.getArgs().size() != function.getParameterList().size()) {
+            System.out.println("ARGUMENT NUMBER MISMATCH " + identifier.getId() + ":" + line + "\n");
             System.exit(0);
         }
 
-        for (int i = 0; i < function.parameterList.size(); i++) {
-            newArgs.put(function.parameterList.get(i), argumentList.getArgs().get(i).execute(args));
+        for (int i = 0; i < function.getParameterList().size(); i++) {
+            newArgs.put(function.getParameterList().get(i), argumentList.getArgs().get(i).execute(args));
         }
-        return function.body.execute(newArgs);
+        return function.getBody().execute(newArgs);
     }
 }
 
-class IfExpression implements Expression {
+class IfExpression extends Expression {
     private final Expression condition;
     private final Expression trueExpression;
     private final Expression falseExpression;
 
-    IfExpression(Expression condition, Expression trueExpression, Expression falseExpression) {
+    IfExpression(int line, Expression condition, Expression trueExpression, Expression falseExpression) {
+        this.line = line;
         this.condition = condition;
         this.trueExpression = trueExpression;
         this.falseExpression = falseExpression;
