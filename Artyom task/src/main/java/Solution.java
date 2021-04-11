@@ -38,9 +38,10 @@ public class Solution {
      * @param smallerStr assumed small string
      * @return Optional(to from) if strings do not match in the character
      * Optional.empty() if smaller string is a prefix of larger string
-     * @throws IllegalStateException if larger string is a prefix of smaller string
+     * @throws InvalidAlphabetException if larger string is a prefix of smaller string
      */
-    private Optional<DirectedEdge> getDirectedEdgeByDifference(String largerStr, String smallerStr) {
+    private Optional<DirectedEdge> getDirectedEdgeByDifference(String largerStr, String smallerStr)
+            throws InvalidAlphabetException {
         int largerIndex = 0;
         int smallerIndex = 0;
         while (largerIndex < largerStr.length() && smallerIndex < smallerStr.length()) {
@@ -55,7 +56,7 @@ public class Solution {
         }
 
         if (largerIndex == largerStr.length() && smallerIndex < smallerStr.length()) {
-            throw new IllegalStateException(
+            throw new InvalidAlphabetException(
                     "The early word is lexicographically smaller than later word for any alphabet"
             );
         }
@@ -77,7 +78,7 @@ public class Solution {
         }
     }
 
-    private void buildDirectedGraph() {
+    private void buildDirectedGraph() throws InvalidAlphabetException {
         for (int i = 0; i < words.length - 1; i++) {
             Optional<DirectedEdge> edgeOptional = getDirectedEdgeByDifference(words[i], words[i + 1]);
 
@@ -137,7 +138,7 @@ public class Solution {
 
         try {
             buildDirectedGraph();
-        } catch (IllegalStateException exception) {
+        } catch (InvalidAlphabetException exception) {
             return Optional.empty();
         }
 

@@ -76,7 +76,7 @@ public class TestSolution {
     }
 
     @Test
-    public void testSmall() throws IOException {
+    public void testSmall() {
         for (int i = 0; i < 10000; i++) {
             int n = 10;
             Optional<String> alphabet = Optional.empty();
@@ -96,7 +96,7 @@ public class TestSolution {
     }
 
     @Test
-    public void testMiddle() throws IOException {
+    public void testMiddle() {
         for (int i = 0; i < 10; i++) {
             int n = 20;
             Optional<String> alphabet = Optional.empty();
