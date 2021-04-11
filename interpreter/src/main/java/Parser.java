@@ -1,4 +1,7 @@
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 public class Parser {
 
@@ -7,21 +10,25 @@ public class Parser {
 
     Parser(String text) {
         lexer = new Lexer(text);
-        lexer.lexAll();
+
+        if (!lexer.lexAll()) {
+            System.out.println("LEX ERROR");
+            System.exit(0);
+        }
     }
 
     private String acceptToken(Token token) {
-        Token tokenByPos = lexer.getToken(currentPosition);
-        if (tokenByPos.equals(token)) {
+        Entry<Token, String> entry = lexer.getTokenAndValue(currentPosition);
+        if (entry.getKey().equals(token)) {
             currentPosition++;
-            return tokenByPos.getValue();
+            return entry.getValue();
         } else {
             throw new IllegalStateException();
         }
     }
 
     private boolean tryAcceptToken(Token token) {
-        return lexer.getToken(currentPosition).equals(token);
+        return lexer.getTokenAndValue(currentPosition).getKey().equals(token);
     }
 
     private String parseOperation() {
@@ -120,9 +127,11 @@ public class Parser {
         if (tryAcceptToken(Token.LEFT_SQUARE_BRACKET)) {
             return parseIfExpression();
         }
+
         if (tryAcceptToken(Token.LEFT_ROUND_BRACKET)) {
             return parseBinaryExpression();
         }
+
         if (tryAcceptToken(Token.IDENTIFIER)) {
             Identifier identifier = parseIdentifier();
             if (tryAcceptToken(Token.LEFT_ROUND_BRACKET)) { // call
@@ -134,7 +143,96 @@ public class Parser {
             } else { // id
                 return identifier;
             }
+
         }
         return parseConstantExpression();
+    }
+
+    public List<String> parseParameterList() {
+        ArrayList<String> parameterList = new ArrayList<>();
+        parameterList.add(acceptToken(Token.IDENTIFIER));
+
+        while (tryAcceptToken(Token.COMMA)) {
+            acceptToken(Token.COMMA);
+            parameterList.add(acceptToken(Token.IDENTIFIER));
+        }
+
+        return parameterList;
+    }
+
+    private FunctionDefinition parseFunctionDefinition() {
+        try {
+            String id = acceptToken(Token.IDENTIFIER);
+            acceptToken(Token.LEFT_ROUND_BRACKET);
+            List<String> parameterList = parseParameterList();
+            acceptToken(Token.RIGHT_ROUND_BRACKET);
+            acceptToken(Token.EQ);
+            acceptToken(Token.LEFT_BRACE);
+            Expression expression = parseExpression();
+            acceptToken(Token.RIGHT_BRACE);
+
+            return new FunctionDefinition(id, parameterList, expression);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private List<FunctionDefinition> parseFunctionDefinitionList() {
+        ArrayList<FunctionDefinition> functionDefinitionList = new ArrayList<>();
+
+        while (tryAcceptToken(Token.IDENTIFIER)) {
+            int shapshot = currentPosition;
+            FunctionDefinition functionDefinition = parseFunctionDefinition();
+
+            if (functionDefinition != null) {
+                functionDefinitionList.add(functionDefinition);
+                acceptToken(Token.EOL);
+            } else {
+                currentPosition = shapshot;
+                break;
+            }
+        }
+
+        return functionDefinitionList;
+    }
+
+    public Integer parseProgram() {
+        List<FunctionDefinition> functionDefinitionList = null;
+
+        try {
+            functionDefinitionList = parseFunctionDefinitionList();
+        } catch (Exception e) {
+            System.out.println("SYNTAX ERROR");
+            System.exit(0);
+        }
+
+        HashMap<String, FunctionDefinition> functions = new HashMap<>();
+        for (var elem : functionDefinitionList) {
+            functions.put(elem.id, elem);
+        }
+        Program.functions = functions;
+
+        Expression expression = null;
+        try {
+            expression = parseExpression();
+        } catch (Exception e) {
+            System.out.println("SYNTAX ERROR");
+            System.exit(0);
+        }
+
+        try {
+            return expression.execute(null);
+        } catch (RuntimeException runtimeException) {
+            System.out.println("RUNTIME ERROR");
+            System.exit(0);
+        }
+
+        return null;
+    }
+
+    public static void main(String[] args) {
+        Parser parser = new Parser("g(a,b)={(a/b)}\n" +
+                "g(10,0)");
+        System.out.println(parser.parseProgram());
     }
 }
